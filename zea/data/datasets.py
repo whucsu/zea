@@ -41,7 +41,7 @@ import numpy as np
 import tqdm
 
 from zea import log
-from zea.data.file import File, validate_file
+from zea.data.file import File
 from zea.data.preset_utils import (
     HF_DATASETS_DIR,
     HF_PREFIX,
@@ -274,7 +274,9 @@ class Folder:
             desc="Checking dataset files on validity (zea format)",
         ):
             try:
-                validate_file(file_path)
+                with File(file_path) as file:
+                    file.validate()
+                    num_frames_per_file.append(file.n_frames)
             except Exception as e:
                 validation_error_log.append(f"File {file_path} is not a valid zea dataset.\n{e}\n")
                 # convert into warning
@@ -355,7 +357,7 @@ class Folder:
                 f.write(f"{'-' * 80}\n")
                 # write all file names (not entire path) with number of frames on a new line
                 for file_path, num_frames in zip(self.file_paths, num_frames_per_file):
-                    f.write(f"{file_path.name}: {num_frames}\n")
+                    f.write(f"{Path(file_path).name}: {num_frames}\n")
                 f.write(f"{'-' * 80}\n")
 
             # Write the hash of the validation file
