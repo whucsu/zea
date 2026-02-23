@@ -17,7 +17,6 @@ Main Classes
 Functions
 ---------
 
-- find_h5_files: Recursively finds HDF5 files and retrieves their dataset shapes.
 - split_files_by_directory: Splits files among directories according to specified ratios.
 - count_samples_per_directory: Counts the number of files per directory.
 
@@ -466,8 +465,8 @@ class Dataset(H5FileHandleCache):
         """Load the shapes of the datasets in each file."""
         return _find_h5_file_shapes(self.file_paths, key, _file_hash(self.file_paths))
 
-    def find_files(self, paths):
-        """Find files and shapes in the dataset."""
+    def find_files(self, paths) -> List[str]:
+        """Find files and optionally validate folders and files."""
         # Initialize file paths and shapes
         file_paths = []
 
@@ -491,7 +490,7 @@ class Dataset(H5FileHandleCache):
                 file_paths += folder.file_paths
                 del folder
             elif file_path.is_file():
-                file_paths.append(file_path)
+                file_paths.append(str(file_path))
                 with File(file_path) as file:
                     if self.validate:
                         file.validate()
@@ -542,10 +541,10 @@ class Dataset(H5FileHandleCache):
         return sum(self.get_file(file_path).n_frames for file_path in self.file_paths)
 
     def __repr__(self):
-        return f"<zea.data.datasets.Dataset at 0x{id(self):x}: {self.n_files} files'>"
+        return f"<zea.data.datasets.Dataset at 0x{id(self):x}: {self.n_files} files>"
 
     def __str__(self):
-        return f"Dataset with {self.n_files} files')"
+        return f"Dataset with {self.n_files} files"
 
     def __enter__(self):
         return self
