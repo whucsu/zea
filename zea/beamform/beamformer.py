@@ -852,10 +852,11 @@ def calculate_delays_heterogeneous_medium(
     rx_delays = tof * sampling_frequency
     tx_delays = (
         tof
-        # The diagonal of t0_delays selects the appropriate transmit delay 
+        # The diagonal of t0_delays selects the appropriate transmit delay
         # for each element (n_tx, n_el) -> (n_tx,)
-        + ops.diag(t0_delays)[:, None] 
         - initial_times[:, None]
+        # can take diag because of the multistatic assumption (n_tx == n_el)
+        + ops.diag(t0_delays)[:, None]
         + ops.take(t_peak, tx_waveform_indices)[:, None]
     ) * sampling_frequency
     return tx_delays, rx_delays
