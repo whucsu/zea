@@ -771,8 +771,8 @@ def calculate_delays_heterogeneous_medium(
     Args:
         grid (Tensor): Pixel coordinates of shape ``(n_pix, 3)``.
         sos_map (Tensor): Speed-of-sound map of shape ``(Nz, Nx)`` in m/s.
-        sos_grid_x (Tensor): x-coordinates of ``sos_map`` rows.
-        sos_grid_z (Tensor): z-coordinates of ``sos_map`` columns.
+        sos_grid_x (Tensor): x-coordinates of ``sos_map`` columns.
+        sos_grid_z (Tensor): z-coordinates of ``sos_map`` rows.
         t0_delays (Tensor): Transmit delays of shape ``(n_tx, n_el)``,
             shifted so that the smallest delay is 0.
         probe_geometry (Tensor): Element positions of shape ``(n_el, 3)``.
