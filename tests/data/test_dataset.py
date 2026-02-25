@@ -1,10 +1,12 @@
 """Basic testing datasets"""
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from zea.config import Config, check_config
-from zea.data.datasets import Dataset, Folder
+from zea.data.datasets import Dataset, Folder, split_files_by_directory
 from zea.internal.checks import _IMAGE_DATA_TYPES, _NON_IMAGE_DATA_TYPES
 
 from .. import DUMMY_DATASET_GRID_SIZE_X, DUMMY_DATASET_GRID_SIZE_Z, DUMMY_DATASET_N_FRAMES
@@ -112,3 +114,44 @@ def test_folder_copy_all_keys(dummy_dataset_path, tmp_path):
             for key in _ALL_DATA_TYPES:
                 assert key in file["data"], f"Copied folder does not contain {key} key"
             assert "scan" in file, "Copied folder does not contain 'scan' key"
+
+
+@pytest.mark.parametrize(
+    "dir_sizes, splits, expected_counts",
+    [
+        # full split returns all files from both directories
+        ([10, 20], [1.0, 1.0], [10, 20]),
+        # half split from each directory
+        ([10, 20], [0.5, 0.5], [5, 10]),
+        # zero split from first directory, all from second
+        ([10, 20], [0.0, 1.0], [0, 20]),
+        # all from first, none from second
+        ([10, 20], [1.0, 0.0], [10, 0]),
+        # three directories, full split
+        ([5, 5, 5], [1.0, 1.0, 1.0], [5, 5, 5]),
+        # three directories, partial split (int truncation: int(0.6*5)=3)
+        ([5, 5, 5], [0.6, 0.6, 0.6], [3, 3, 3]),
+        # single directory
+        ([8], [0.25], [2]),
+    ],
+)
+def test_split_files_by_directory(dir_sizes, splits, expected_counts, tmp_path):
+    """Test that split_files_by_directory returns the correct number of files per directory."""
+
+    # Build fake file paths (no real files needed)
+    directories = [str(tmp_path / f"dir{i}") for i in range(len(dir_sizes))]
+    file_names = []
+    for dir_path, n_files in zip(directories, dir_sizes):
+        for j in range(n_files):
+            file_names.append(str(Path(dir_path) / f"file{j:04d}.hdf5"))
+
+    result = split_files_by_directory(file_names, directories, splits)
+
+    assert len(result) == sum(expected_counts), (
+        f"Expected {sum(expected_counts)} files, got {len(result)}"
+    )
+
+    # Verify the correct number of files was taken from each directory
+    for dir_path, expected in zip(directories, expected_counts):
+        count = sum(1 for f in result if f.startswith(dir_path))
+        assert count == expected, f"Expected {expected} files from '{dir_path}', got {count}"
