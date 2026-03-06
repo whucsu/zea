@@ -25,7 +25,9 @@ from zea.io_lib import _SUPPORTED_IMG_TYPES
 from .. import DEFAULT_TEST_SEED
 
 
-@pytest.mark.parametrize("dataset", ["echonet", "echonetlvh", "camus", "picmus", "verasonics"])
+@pytest.mark.parametrize(
+    "dataset", ["echonet", "echonetlvh", "camus", "cetus", "picmus", "verasonics"]
+)
 @pytest.mark.heavy
 def test_conversion_script(tmp_path_factory, dataset):
     """
@@ -102,6 +104,8 @@ def create_test_data_for_dataset(dataset, src):
         extra_args = create_echonetlvh_test_data(src)
     elif dataset == "camus":
         create_camus_test_data(src)
+    elif dataset == "cetus":
+        create_cetus_test_data(src)
     elif dataset == "picmus":
         create_picmus_test_data(src)
     elif dataset == "verasonics":
@@ -129,6 +133,8 @@ def verify_converted_test_dataset(dataset, src, dst):
         verify_converted_echonetlvh_test_data(dst)
     elif dataset == "camus":
         verify_converted_camus_test_data(dst)
+    elif dataset == "cetus":
+        verify_converted_cetus_test_data(dst)
     elif dataset == "picmus":
         verify_converted_picmus_test_data(dst)
     elif dataset == "verasonics":
@@ -417,6 +423,36 @@ def create_camus_test_data(src):
         sitk.WriteImage(image, str(filepath))
 
 
+def create_cetus_test_data(src):
+    """Create CETUS-like NIfTI test data.
+
+    Creates 3 patients (IDs 1, 31, 39) to cover train/val/test splits,
+    each with ED, ES B-mode volumes and corresponding ground truth masks.
+    """
+    rng = np.random.default_rng(DEFAULT_TEST_SEED)
+
+    for pid in [1, 31, 39]:
+        patient_name = f"patient{pid:02d}"
+        patient_dir = src / patient_name
+        os.makedirs(patient_dir)
+
+        for tp in ["ED", "ES"]:
+            # Small 3D volume with a background padding value (~10) and data region
+            vol = np.full((16, 16, 16), 10.0, dtype=np.float32)
+            vol[4:12, 4:12, 4:12] = rng.uniform(30, 255, (8, 8, 8)).astype(np.float32)
+
+            image = sitk.GetImageFromArray(vol)
+            image.SetSpacing((0.0005763, 0.0005763, 0.0005763))
+            sitk.WriteImage(image, str(patient_dir / f"{patient_name}_{tp}.nii.gz"))
+
+            # Ground truth segmentation
+            gt = np.zeros((16, 16, 16), dtype=np.float32)
+            gt[5:11, 5:11, 5:11] = 255.0
+            gt_image = sitk.GetImageFromArray(gt)
+            gt_image.SetSpacing((0.0005763, 0.0005763, 0.0005763))
+            sitk.WriteImage(gt_image, str(patient_dir / f"{patient_name}_{tp}_gt.nii.gz"))
+
+
 def create_picmus_test_data(src):
     """
     Creates test hdf5 files ending in iq or rf with random content,
@@ -641,6 +677,31 @@ def verify_converted_camus_test_data(dst):
             with File(h5_file, "r") as f:
                 assert "scan" in f, f"Missing 'scan' in {h5_file}"
                 f.validate()
+
+
+def verify_converted_cetus_test_data(dst):
+    """Verify CETUS conversion produced correct train/val/test HDF5 files."""
+    expected = {
+        "train": ["patient01_ED.hdf5", "patient01_ES.hdf5"],
+        "val": ["patient31_ED.hdf5", "patient31_ES.hdf5"],
+        "test": ["patient39_ED.hdf5", "patient39_ES.hdf5"],
+    }
+    for split, filenames in expected.items():
+        split_dir = dst / split
+        assert split_dir.exists(), f"Missing directory: {split_dir}"
+        h5_files = [f.name for f in split_dir.rglob("*.hdf5")]
+        assert set(h5_files) == set(filenames), (
+            f"Mismatch in converted hdf5 files for split {split}"
+        )
+
+    # Spot-check one file
+    sample = dst / "train" / "patient01" / "patient01_ED.hdf5"
+    with File(sample, "r") as f:
+        assert "data" in f, "Missing 'data' group"
+        img = f.load_data("image_sc")
+        assert img.ndim == 4, f"Expected 4-D image_sc, got {img.ndim}"
+        assert "non_standard_elements/segmentation" in f
+        assert "non_standard_elements/voxel_spacing" in f
 
 
 def verify_converted_picmus_test_data(dst):

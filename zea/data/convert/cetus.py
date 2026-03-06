@@ -475,8 +475,12 @@ def convert_cetus(args):
 
     # Parallel processing
     with ProcessPoolExecutor() as exe:
-        for _ in tqdm(exe.map(_process_task, tasks), total=len(tasks), desc="Processing files"):
-            pass
+        futures = [exe.submit(_process_task, t) for t in tasks]
+        for future in tqdm(futures, desc="Processing files"):
+            try:
+                future.result()
+            except Exception as exc:
+                log.error(f"Failed to process a file: {exc}")
     log.info(f"Processing finished for {len(tasks)} files")
 
     if getattr(args, "upload", False):

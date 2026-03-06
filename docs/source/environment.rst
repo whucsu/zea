@@ -32,9 +32,9 @@ Here are the environment variables that ``zea`` uses at runtime. Arguably the mo
      - ``30``
      - Any positive integer, or ``<= 0`` to disable timeout.
    * - ``ZEA_DOWNLOAD_TIMEOUT``
-      - Timeout in seconds for downloading files, e.g. during dataset conversion.
-      - ``60``
-      - Any positive integer, or ``<= 0`` to disable timeout.
+     - Timeout in seconds for downloading files, e.g. during dataset conversion.
+     - ``60``
+     - Any positive integer, or ``<= 0`` to disable timeout.
    * - ``ZEA_FIND_H5_SHAPES_PARALLEL``
      - If set to ``1``, will use parallel processing when searching for HDF5 file shapes.
      - ``1``
