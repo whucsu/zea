@@ -333,7 +333,8 @@ def download_cetus(destination: str | Path, patients: list[int] | None = None) -
 
     # Get dataset folder ID
     url = f"{_GIRDER_API}/folder?parentType=collection&parentId={_CETUS_COLLECTION_ID}&limit=50"
-    with urllib.request.urlopen(url) as resp:
+    timeout = os.getenv("ZEA_DOWNLOAD_TIMEOUT", "60")
+    with urllib.request.urlopen(url, timeout=int(timeout)) as resp:
         folders = json.loads(resp.read())
 
     dataset_folder_id = None
@@ -347,7 +348,7 @@ def download_cetus(destination: str | Path, patients: list[int] | None = None) -
 
     # Get patient folders
     url = f"{_GIRDER_API}/folder?parentType=folder&parentId={dataset_folder_id}&limit=50"
-    with urllib.request.urlopen(url) as resp:
+    with urllib.request.urlopen(url, timeout=int(timeout)) as resp:
         patient_folders = json.loads(resp.read())
 
     if patients is not None:
@@ -567,7 +568,7 @@ If you use this dataset, please cite the original CETUS paper:
   title   = {{Standardized Evaluation System for Left Ventricular Segmentation
               Algorithms in 3D Echocardiography}},
   author  = {{Bernard, Olivier and Bosch, Johan G. and Heyde, Brecht and
-              "; Alessandrini, Martino and Barbosa, Daniel and Camarasu-Pop,
+              Alessandrini, Martino and Barbosa, Daniel and Camarasu-Pop,
               Sorina and Cervenansky, Fr{{\\'e}}d{{\\'e}}ric and Valette,
               S{{\\'e}}bastien and Mirea, Oana and Berber, Merih and others}},
   journal = {{IEEE Transactions on Medical Imaging}},
