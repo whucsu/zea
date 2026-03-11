@@ -31,9 +31,7 @@ scientific research purposes only.
 
 from __future__ import annotations
 
-import json
 import os
-import urllib.request
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, Tuple
@@ -43,6 +41,7 @@ import numpy as np
 from tqdm import tqdm
 
 from zea import log
+from zea.data.convert.utils import download_from_girder
 from zea.data.data_format import DatasetElement, generate_zea_dataset
 
 # Citation text for inclusion in every converted file
@@ -62,8 +61,7 @@ CETUS_DESCRIPTION = (
     "Citation: {citation}"
 ).format(license=CETUS_LICENSE, citation=CETUS_CITATION)
 
-# Girder API base URL for the CETUS collection
-_GIRDER_API = "https://humanheart-project.creatis.insa-lyon.fr/database/api/v1"
+# Girder collection ID for the CETUS dataset
 _CETUS_COLLECTION_ID = "62eb991b73e9f0048c3a6c45"
 
 # Dataset splits: patient IDs 1-30 for training, 31-38 for validation, 39-45 for test
@@ -329,59 +327,12 @@ def download_cetus(  # pragma: no cover
     Returns:
         Path to the downloaded dataset directory.
     """
-    destination = Path(destination)
-    destination.mkdir(parents=True, exist_ok=True)
-
-    # Get dataset folder ID
-    url = f"{_GIRDER_API}/folder?parentType=collection&parentId={_CETUS_COLLECTION_ID}&limit=50"
-    timeout = os.getenv("ZEA_DOWNLOAD_TIMEOUT", "60")
-    with urllib.request.urlopen(url, timeout=int(timeout)) as resp:
-        folders = json.loads(resp.read())
-
-    dataset_folder_id = None
-    for folder in folders:
-        if folder["name"] == "dataset":
-            dataset_folder_id = folder["_id"]
-            break
-
-    if dataset_folder_id is None:
-        raise RuntimeError("Could not find 'dataset' folder in CETUS collection.")
-
-    # Get patient folders
-    url = f"{_GIRDER_API}/folder?parentType=folder&parentId={dataset_folder_id}&limit=50"
-    with urllib.request.urlopen(url, timeout=int(timeout)) as resp:
-        patient_folders = json.loads(resp.read())
-
-    if patients is not None:
-        patient_set = set(patients)
-        patient_folders = [
-            pf for pf in patient_folders if int(pf["name"].removeprefix("patient")) in patient_set
-        ]
-
-    log.info(f"Downloading {len(patient_folders)} patients from CETUS dataset...")
-
-    for pf in tqdm(patient_folders, desc="Downloading patients"):
-        patient_name = pf["name"]
-        patient_dir = destination / patient_name
-        patient_dir.mkdir(parents=True, exist_ok=True)
-
-        # Get items (files) in the patient folder
-        url = f"{_GIRDER_API}/item?folderId={pf['_id']}&limit=20"
-        with urllib.request.urlopen(url) as resp:
-            items = json.loads(resp.read())
-
-        for item in items:
-            file_path = patient_dir / item["name"]
-            if file_path.exists():
-                log.debug(f"File {file_path} already exists when downloading. Skipping.")
-                continue
-
-            download_url = f"{_GIRDER_API}/item/{item['_id']}/download"
-            log.debug(f"Downloading {item['name']}...")
-            urllib.request.urlretrieve(download_url, str(file_path))
-
-    log.info(f"CETUS dataset downloaded to {destination}")
-    return destination
+    return download_from_girder(
+        collection_id=_CETUS_COLLECTION_ID,
+        destination=destination,
+        dataset_name="CETUS",
+        patients=patients,
+    )
 
 
 def convert_cetus(args):

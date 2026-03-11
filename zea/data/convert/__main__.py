@@ -6,8 +6,8 @@ Usage::
 
 Examples::
 
+    python -m zea.data.convert camus ./raw ./output --download
     python -m zea.data.convert cetus ./raw ./output --download
-    python -m zea.data.convert camus ./raw ./output
     python -m zea.data.convert echonet ./raw ./output
 
 Run ``python -m zea.data.convert --help`` for all options.
@@ -40,6 +40,11 @@ def _add_parser_args_camus(subparsers):
     camus_parser = subparsers.add_parser("camus", help="Convert CAMUS dataset")
     camus_parser.add_argument("src", type=str, help="Source folder path")
     camus_parser.add_argument("dst", type=str, help="Destination folder path")
+    camus_parser.add_argument(
+        "--download",
+        action="store_true",
+        help="Download the CAMUS dataset from the server before converting",
+    )
     camus_parser.add_argument(
         "--no_hyperthreading",
         action="store_true",
