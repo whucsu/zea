@@ -5185,7 +5185,7 @@ description = "Easily download, build, install, upgrade, and uninstall Python pa
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version >= \"3.12\" and (extra == \"backends\" or extra == \"dev\" or extra == \"docs\") or (platform_system == \"Linux\" and platform_machine == \"x86_64\" and extra == \"backends\" or extra == \"dev\" or extra == \"docs\" or extra == \"backends\") and python_version < \"3.12\""
+markers = "python_version >= \"3.12\" and (extra == \"backends\" or extra == \"dev\" or extra == \"docs\") or platform_system == \"Linux\" and platform_machine == \"x86_64\" and (extra == \"backends\" or extra == \"dev\" or extra == \"docs\") or extra == \"dev\" or extra == \"docs\" or extra == \"backends\""
 files = [
     {file = "setuptools-80.9.0-py3-none-any.whl", hash = "sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922"},
     {file = "setuptools-80.9.0.tar.gz", hash = "sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c"},
@@ -6665,4 +6665,4 @@ tests = ["cloudpickle", "ipykernel", "ipywidgets", "papermill", "pre-commit", "p
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "09e81d856160b6a99f3b386f9da5c510ae7a54a4ce733f7f2318b185b6f0eab2"
+content-hash = "451d752ea57a02d9293291c57457068aad2c37b8c061e99b9f49382ab65b3a4e"
