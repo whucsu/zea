@@ -34,14 +34,13 @@ from __future__ import annotations
 import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Any, Dict, Tuple
 
 import h5py
 import numpy as np
 from tqdm import tqdm
 
 from zea import log
-from zea.data.convert.utils import download_from_girder
+from zea.data.convert.utils import download_from_girder, sitk_load
 from zea.data.data_format import DatasetElement, generate_zea_dataset
 
 # Citation text for inclusion in every converted file
@@ -84,41 +83,6 @@ def get_split(patient_id: int) -> str:
         if start <= patient_id < end:
             return split_name
     raise ValueError(f"Did not find split for patient: {patient_id}")
-
-
-def sitk_load(filepath: str | Path) -> Tuple[np.ndarray, Dict[str, Any]]:
-    """Load a NIfTI image using SimpleITK and return the array and metadata.
-
-    Args:
-        filepath: Path to the ``.nii.gz`` file.
-
-    Returns:
-        Tuple of:
-            - Image array (squeezed) of shape ``(depth, height, width)``.
-            - Dictionary of metadata including origin, spacing, and direction.
-    """
-    try:
-        import SimpleITK as sitk
-    except ImportError as exc:
-        raise ImportError(
-            "SimpleITK is not installed. "
-            "Please install it with `pip install SimpleITK` to convert the CETUS dataset."
-        ) from exc
-
-    image = sitk.ReadImage(str(filepath))
-
-    metadata = {
-        "origin": image.GetOrigin(),
-        "spacing": image.GetSpacing(),
-        "direction": image.GetDirection(),
-        "size": image.GetSize(),
-        "dimension": image.GetDimension(),
-    }
-
-    # Extract numpy array; squeeze any singleton dimensions
-    im_array = np.squeeze(sitk.GetArrayFromImage(image))
-
-    return im_array, metadata
 
 
 def _detect_background_level(volume: np.ndarray) -> float:
@@ -340,14 +304,11 @@ def convert_cetus(args):
 
     Processes all NIfTI B-mode volumes found under the source folder, assigns
     each patient to a train/val/test split, and executes per-file conversion
-    tasks either serially or in parallel. Optionally uploads the result to
-    HuggingFace Hub.
+    tasks either serially or in parallel.
 
     Usage::
 
-        python -m zea.data.convert cetus <source_folder> <destination_folder>
         python -m zea.data.convert cetus <source_folder> <destination_folder> --download
-        python -m zea.data.convert cetus <source_folder> <destination_folder> --upload
 
     Args:
         args (argparse.Namespace): An object with attributes:
@@ -361,7 +322,8 @@ def convert_cetus(args):
             - no_hyperthreading (bool, optional): If True, run tasks serially instead
               of using a process pool.
             - upload (bool, optional): If True, upload the converted dataset to
-              HuggingFace Hub after conversion.
+              HuggingFace Hub after conversion. Only for zea maintainers with push
+              access to the repository.
     """
     cetus_source_folder = Path(args.src)
     cetus_output_folder = Path(args.dst)
@@ -483,7 +445,7 @@ This dataset was downloaded, converted to zea format, and uploaded using the
 [zea](https://github.com/tue-bmd/zea) data converter:
 
 ```bash
-python -m zea.data.convert cetus <src> <dst> --download --upload
+python -m zea.data.convert cetus <src> <dst> --download
 ```
 
 ## Dataset structure
@@ -554,6 +516,8 @@ def _write_dataset_card(folder: Path) -> Path:  # pragma: no cover
 
 def upload_cetus(output_folder: str | Path) -> None:  # pragma: no cover
     """Upload the converted CETUS dataset to HuggingFace Hub.
+
+    Only for zea maintainers with push access to the repository.
 
     Writes a dataset card, prints an upload summary, and asks for
     confirmation before pushing.

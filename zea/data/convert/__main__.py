@@ -38,12 +38,19 @@ def _add_parser_args_echonet(subparsers):
 def _add_parser_args_camus(subparsers):
     """Add CAMUS specific arguments to the parser."""
     camus_parser = subparsers.add_parser("camus", help="Convert CAMUS dataset")
-    camus_parser.add_argument("src", type=str, help="Source folder path")
+    camus_parser.add_argument(
+        "src",
+        type=str,
+        help=(
+            "Source folder path, should contain either manually downloaded dataset "
+            "or will be target location for automated download with the --download flag"
+        ),
+    )
     camus_parser.add_argument("dst", type=str, help="Destination folder path")
     camus_parser.add_argument(
         "--download",
         action="store_true",
-        help="Download the CAMUS dataset from the server before converting",
+        help="Download the CAMUS dataset from the server, will be saved to the --src path",
     )
     camus_parser.add_argument(
         "--no_hyperthreading",
@@ -107,12 +114,19 @@ def _add_parser_args_picmus(subparsers):
 def _add_parser_args_cetus(subparsers):
     """Add CETUS specific arguments to the parser."""
     cetus_parser = subparsers.add_parser("cetus", help="Convert CETUS dataset")
-    cetus_parser.add_argument("src", type=str, help="Source folder path")
+    cetus_parser.add_argument(
+        "src",
+        type=str,
+        help=(
+            "Source folder path, should contain either manually downloaded dataset "
+            "or will be target location for automated download with the --download flag"
+        ),
+    )
     cetus_parser.add_argument("dst", type=str, help="Destination folder path")
     cetus_parser.add_argument(
         "--download",
         action="store_true",
-        help="Download the CETUS dataset from the server before converting",
+        help="Download the CETUS dataset from the server, will be saved to the --src path",
     )
     cetus_parser.add_argument(
         "--no_hyperthreading",
@@ -181,9 +195,16 @@ def main():
     """
     Parse command-line arguments and dispatch to the selected dataset conversion routine.
 
-    This function obtains CLI arguments via get_args() and calls the corresponding converter
-    (convert_echonet, convert_echonetlvh, convert_camus, convert_picmus, or convert_verasonics)
-    based on args.dataset.
+    This function obtains CLI arguments via get_args() and calls the corresponding converter.
+
+    Current supported datasets are:
+    - echonet
+    - echonetlvh
+    - camus
+    - cetus
+    - picmus
+    - verasonics
+
     Raises a ValueError if args.dataset is not one of the supported choices.
     """
     parser = get_parser()
