@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core", "setuptools"]
+build-backend = "poetry.core.masonry.api"
+
 [project]
 name = "zea"
 version = "0.0.10"
@@ -131,10 +135,6 @@ Repository = "https://github.com/tue-bmd/zea/"
 
 [project.scripts]
 zea = "zea.__main__:main"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 # We use ruff to lint and auto-format code
